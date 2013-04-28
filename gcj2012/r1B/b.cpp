@@ -38,12 +38,14 @@ static const double EPS = 1e-9;
 int TC;
 int H,N,M;
 
-int F[10][10];
-int C[10][10];
-int W[2][10][10];
-int T[10][10];
+int C[100][100];
+int F[100][100];
+int T[100][100];
 
 typedef pair<int,int> pos_t;
+typedef pair<int, pos_t> node_t;
+
+int NF[4][2] = { {-1,0}, {1,0}, {0,-1}, {0,1} };
 
 int main(int argc, char *argv[]) {
     cin>>TC;
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]) {
         rep(i,0,N) {
             rep(j,0,M) {
                 cin>>C[i][j];
-                T[i][j] = -1;
+                T[i][j] = -INF;
             }
         }
         rep(i,0,N) {
@@ -62,107 +64,61 @@ int main(int argc, char *argv[]) {
             }
         }
         
+        priority_queue<node_t> PQ;
+        {
+            deque<pos_t> Q;
+            T[0][0] = H;
+            Q.push_back(make_pair(0,0));
+            PQ.push(make_pair(H, make_pair(0,0)));
+            while (!Q.empty()) {
+                pos_t p=Q.front(); Q.pop_front();
+                int i=p.first;
+                int j=p.second;
+                rep(f,0,4) {
+                    int ni=i+NF[f][0];
+                    int nj=j+NF[f][1];
+                    if (ni<0 || nj<0 || ni>N-1 || nj>M-1) continue;
+                    if (C[i][j] < F[ni][nj]+50
+                     || C[ni][nj] < std::max(H, std::max(F[i][j],F[ni][nj]))+50) continue;
+                    if (T[ni][nj]==H) continue;
+                    T[ni][nj] = H;
+                    Q.push_back(make_pair(ni,nj));
+                    PQ.push(make_pair(H, make_pair(ni,nj)));
+                }
+            }
+        }
+        
+        while (!PQ.empty()) {
+            node_t n = PQ.top(); PQ.pop();
+            int i = n.second.first;
+            int j = n.second.second;
+            int h = n.first;
+            if (T[i][j] > h) continue;
+            rep(f,0,4) {
+                int ni=i+NF[f][0];
+                int nj=j+NF[f][1];
+                if (ni<0||nj<0||ni>N-1||nj>M-1) continue;
+                if (C[i][j] < F[ni][nj]+50) continue;
+                if (C[ni][nj] < std::max(F[i][j],F[ni][nj])+50) continue;
+                
+                int nh=std::min(h, C[ni][nj]-50);
+                int nv=nh - ((nh>=F[i][j]+20) ? 10:100);
+                if (T[ni][nj]<nv) {
+                    T[ni][nj]=nv;
+                    PQ.push(make_pair(nv, make_pair(ni,nj)));
+                }
+            }
+        }
+        /*
         rep(i,0,N) {
-            rep(j,0,M-1) {
-                if (C[i][j] < F[i][j+1]+50
-                    || C[i][j+1] < std::max(F[i][j],F[i][j+1]+50))
-                {
-                    W[0][i][j] = INF;
-                }
-                else
-                if (C[i][j+1] >= H+50)
-                {
-                    W[0][i][j] = 0;
-                }
-                else
-                {
-                    W[0][i][j] = H-C[i][j+1]+50;
-                }
-            }
+        rep(j,0,M) {
+            cout<<" "<<T[i][j];
         }
-        rep(i,0,N-1) {
-            rep(j,0,M) {
-                if (C[i][j] < F[i+1][j]+50
-                    || C[i+1][j] < std::max(F[i][j],F[i+1][j]+50))
-                {
-                    W[1][i][j] = INF;
-                }
-                else
-                if (C[i+1][j] >= H+50)
-                {
-                    W[1][i][j] = 0;
-                }
-                else
-                {
-                    W[1][i][j] = H-C[i+1][j]+50;
-                }
-            }
+        cout<<endl;
         }
-        
-        T[0][0] = 0;
-        pos_t st(0,0);
-        
-        deque<pos_t> Q;
-        Q.push_back(st);
-        
-        int NF[4][5] = { {-1, 0, 1, -1, 0}, {0, -1, 0, 0, -1}, {1, 0, 1, 0, 0}, {0, 1, 0, 0, 0} };
-
-        while (!Q.empty()) {
-            pos_t p = Q.front(); Q.pop_front();
-            
-            int a=p.first;
-            int b=p.second;
-            rep(i,0,4) {
-                if (a+NF[i][0] < 0 || a+NF[i][0] > N-1
-                 || b+NF[i][1] < 0 || b+NF[i][1] > M-1) {
-                continue;
-                }
-
-                int na=a+NF[i][0];
-                int nb=b+NF[i][1];
-                int nw = W[NF[i][2]][a+NF[i][3]][b+NF[i][4]];
-                cout << "(" << na << "," << nb <<") :"<<nw<<endl;
-                if (nw == INF) {
-                    continue;
-                }
-
-                if (T[a][b]==0 && nw==0)
-                {
-                    if (T[na][nb] < 0) {
-                        T[na][nb] = 0;
-                        Q.push_back(make_pair(na,nb));
-                    }
-                }
-                else
-                {
-                    int n = std::max(nw, T[a][b]);
-                    int m = (H-n-max(F[a][b],F[na][nb]) >= 20)?10:100;
-                    if (T[na][nb]<0 || T[na][nb] > n+m) {
-                        T[na][nb] = n+m;
-                        Q.push_back(make_pair(na,nb));
-                    }
-                }
-            }
-        }
-        cout<<"Case #"<<t<<": "<<(T[N-1][M-1]/10)<<"."<<(T[N-1][M-1]%10)<<endl;
-
-
-        rep(i,0,N) {
-            cout << T[i][0];
-            rep(j,1,M) {
-                cout << " <" << W[0][i][j-1] << "> " << T[i][j];
-            }
-            cout << endl;
-            if (i<N-1) {
-                rep(j,0,M) {
-                    cout << "<" << W[1][i][j] << ">   ";
-                }
-            cout << endl;
-            }
-        }
-        cout << "----" << endl;
-
-
+        */
+        int a=H-T[N-1][M-1];
+        cout<<"Case #"<<t<<": "<<(a/10)<<"."<<(a%10)<<endl;
     }
     return 0;
 }
