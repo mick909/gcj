@@ -16,11 +16,6 @@ int X,Y;
 double PP[10001];
 
 int main(int argc, char *argv[]) {
-            // 残りの落ちてくるダイヤの数
-            ll nl = 5;
-            ll h = 6;
-            X=6;
-
     cin>>T;
     for(int t=1;t<=T;++t) {
         cin>>N>>X>>Y;
